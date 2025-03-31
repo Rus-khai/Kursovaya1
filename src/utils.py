@@ -1,5 +1,6 @@
 import datetime
 import os
+from turtle import pd
 
 import pandas as pd
 
@@ -42,9 +43,6 @@ def read_transaction_excel(file_path = file_path_excel):
     return result_dict
 
 
-
-#print(read_transaction_excel(file_path_excel))
-
 def cards(filter_list_transaction):
     cards = []
     for transaction in filter_list_transaction:
@@ -54,20 +52,18 @@ def cards(filter_list_transaction):
             continue
     return cards
 
-#print(cards(read_transaction_excel()))
-
 def filter(filter_list_transaction, list_cards):
-
-    for transaction in filter_list_transaction:
-        count = 0
-        for card in list_cards:
+    count = 0
+    for card in list_cards:
+        for transaction in filter_list_transaction:
             if transaction.get('Номер карты') == card:
-                count =+ float(transaction.get('Сумма операций'))
-        print(count)
+                if float(transaction.get('Сумма операции')) <= 0:
+                    count =+ float(transaction.get('Сумма операции'))
+
+        dict = {"last_digits": card,
+                "total_spent": count,
+                "cashback": 0
+                }
+        print(dict)
 
 print(filter(read_transaction_excel(file_path_excel), cards(read_transaction_excel())))
-
-
-
-
-
