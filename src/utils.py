@@ -1,13 +1,17 @@
 import datetime
+import json
 import os
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+
+
 from config import DATA_DIR
 
 
 load_dotenv('.env')
 file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
+user_settings = os.path.join(DATA_DIR, 'user_settings.json')
 
 def getting_the_current_time():
     """ Функция подучает текущий час времени """
@@ -27,7 +31,7 @@ def read_transaction_excel(file_path = file_path_excel):
     """Функция считывает excel.file и выводит список словарей с транзакциями, отфильтрованный по дате"""
     reader_data_excel = pd.read_excel(file_path)
     result_transaction = reader_data_excel.to_dict(orient='records')
-    #print(result_transaction)
+
     result_dict = []
     out_date = input("Введите дату в формате'30.05.2025'")
     for data_dict in result_transaction:
@@ -129,17 +133,33 @@ def currency_rate_eur():
 #print(currency_rate_eur())
 
 def stock_prices():
+    """Функция возвращает список со словарями цен на акции имеющихся в файле 'user_settings'
+        Для получения цен используется Share Price Data API: https://api.marketstack.com."""
 
 
+    with open(user_settings,'r', encoding="utf-8") as file:
+        read_data = json.load(file)
 
-    api_key = os.getenv('API_KEY_Marketstack')
 
-    url = f"https://api.marketstack.com/v1/eod?access_key={api_key}"
+    load_dotenv()
+    api_key = os.getenv('API_KEY_MARKSTACK')
 
-    querystring = {"symbols": "AAPL,AMZN,GOOGL,MSFT,TSLA"}
+    result_list = []
+    if read_data.get('user_stocks'):
+        for data in read_data.get('user_stocks'):
+            querystring = {"symbols": {data}}
+            responses = requests.get(f"https://api.marketstack.com/v1/eod?access_key={api_key}", params=querystring)
+            data_dicts = responses.json().get('data')
 
-    response = requests.get(url, params=querystring)
+            for data_dict in data_dicts:
+                result = data_dict.get('close')
+                break
 
-    print(response.json())
+            result_dict = {
+                "stock": data,
+                "price": result
+            }
+            result_list.append(result_dict)
+    return result_list
 
-print(stock_prices())
+# print(stock_prices())
