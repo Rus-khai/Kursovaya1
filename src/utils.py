@@ -1,11 +1,12 @@
 import datetime
 import os
-from turtle import pd
-
 import pandas as pd
-
+import requests
+from dotenv import load_dotenv
 from config import DATA_DIR
 
+
+load_dotenv('.env')
 file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
 
 def getting_the_current_time():
@@ -20,7 +21,6 @@ def get_input_date_1():
     print(out_date)
     in_date = str(int(out_date[0:1]) - (int(out_date[0:1]) - 1)) + out_date[2:]
     print(in_date)
-
 
 
 def read_transaction_excel(file_path = file_path_excel):
@@ -44,26 +44,102 @@ def read_transaction_excel(file_path = file_path_excel):
 
 
 def cards(filter_list_transaction):
-    cards = []
+    cards_list = []
     for transaction in filter_list_transaction:
-        if transaction.get('Номер карты') not in cards:
-            cards.append(transaction.get('Номер карты'))
+        if str(transaction.get('Номер карты')) != 'nan':
+            if transaction.get('Номер карты') not in cards:
+                cards_list.append(transaction.get('Номер карты'))
         else:
             continue
-    return cards
+    return cards_list
 
-def filter(filter_list_transaction, list_cards):
-    count = 0
+
+def filter_1(filter_list_transaction, list_cards):
+
+    """ """
+    result_dict_list = []
     for card in list_cards:
+        count = 0
+        cashback = 0
         for transaction in filter_list_transaction:
-            if transaction.get('Номер карты') == card:
-                if float(transaction.get('Сумма операции')) <= 0:
-                    count =+ float(transaction.get('Сумма операции'))
+                if transaction.get('Номер карты') == card:
+                    if float(transaction.get('Сумма операции')) <= 0:
+                        count += transaction.get('Сумма операции')
+                    if transaction.get('Кэшбэк'):
+                        cashback_data = str(transaction.get('Кэшбэк'))
+                        if cashback_data != 'nan':
+                            cashback += int(transaction.get('Кэшбэк'))
 
-        dict = {"last_digits": card,
-                "total_spent": count,
-                "cashback": 0
+        dict_filter_card = {"last_digits": str(card)[1:],
+                "total_spent": round(count,2),
+                "cashback": cashback
                 }
-        print(dict)
+        result_dict_list.append(dict_filter_card)
+    return result_dict_list
+#print(filter(read_transaction_excel(file_path_excel), cards(read_transaction_excel())))
 
-print(filter(read_transaction_excel(file_path_excel), cards(read_transaction_excel())))
+
+def top_5_transaction(filter_list_transaction, direction=True):
+    """"""
+    result_dict_transaction = []
+    result_sorted = sorted(filter_list_transaction, key=lambda k: k.get("Сумма операции"), reverse=direction)
+
+    for  transaction in result_sorted[:5]:
+        dict_transaction = {
+                "date": transaction.get('Дата операции'),
+                "amount": transaction.get('Сумма операции'),
+                "category": transaction.get('Категория'),
+                "description": transaction.get('Описание')
+        }
+        result_dict_transaction.append(dict_transaction)
+    return result_dict_transaction
+
+# print(top_5_transaction(read_transaction_excel()))
+
+def currency_rate_usd():
+    v = "RUB"
+    base = "USD"
+    url = f"https://api.apilayer.com/exchangerates_data/latest?symbols={v}&base={base}"
+
+    payload = {}
+    headers = {"apikey": "2JxFXrVuxnS322UdwG6OlktxmkuTcHSs"}
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    # status_code = response.status_code
+    result = response.json()
+    return result
+
+#print(currency_rate_usd())
+
+def currency_rate_eur():
+    v = "RUB"
+    base = "EUR"
+    url = f"https://api.apilayer.com/exchangerates_data/latest?symbols={v}&base={base}"
+
+    payload = {}
+    headers = {"apikey": "2JxFXrVuxnS322UdwG6OlktxmkuTcHSs"}
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    # status_code = response.status_code
+    result = response.json()
+    return result
+
+#print(currency_rate_eur())
+
+def stock_prices():
+
+
+
+    api_key = os.getenv('API_KEY_Marketstack')
+
+    url = f"https://api.marketstack.com/v1/eod?access_key={api_key}"
+
+    querystring = {"symbols": "AAPL,AMZN,GOOGL,MSFT,TSLA"}
+
+    response = requests.get(url, params=querystring)
+
+    print(response.json())
+
+print(stock_prices())
