@@ -1,8 +1,10 @@
 import json
 import os
+
 import pandas as pd
 from dotenv import load_dotenv
-from config import DATA_DIR
+
+from src.config import DATA_DIR
 
 
 def simple_search():
@@ -19,7 +21,8 @@ def simple_search():
 
     try:
         for transaction in result_transaction:
-            if str(transaction.get('Описание')).lower() == str_search.lower() or str(transaction.get('Категория')).lower() == str_search.lower():
+            if (str(transaction.get('Описание')).lower() == str_search.lower()
+                    or str(transaction.get('Категория')).lower() == str_search.lower()):
                 result_list_transaction.append(transaction)
     except Exception as e:
         result_list_transaction = f'Ошибка {e}'
