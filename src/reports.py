@@ -1,26 +1,38 @@
 import datetime
 # import json
-# import logging
-# import os.path
+import logging
+import os.path
 from typing import Optional
-
+from config import LOGS_DIR
 import pandas as pd
+
+log_file = os.path.join(LOGS_DIR, 'reports.log')
+
+logger = logging.getLogger('reports')
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(log_file, encoding='utf-8', mode='w')
+file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
 
 
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> list[dict]:
     """Функция принимает DataFrame, название категории и опционально дату в формате YYYY-MM-DD.
     Возвращает список словарей с транзакциями по заданной категории за последние три месяца (от переданной даты)"""
 
+    logger.info("Идёт проверка, введена ли дата, если нет, то будет назначена текущая дата.")
     if not date:
         date = datetime.datetime.now()
 
     transactions_dicts = transactions.to_dict(orient='records')
+
+    logger.info("Создаётся список расходов за последние три месяца (с даты отправки)")
     result_list = []
     for transaction in transactions_dicts:
         transaction_date = transaction.get('Дата операции')
 
         date_transaction = datetime.datetime.strptime(transaction_date, "%d.%m.%Y %H:%M:%S").date()
-        date_1 = datetime.datetime.strptime(date, "%d.%m.%Y").date()
+        date_1 = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
         if (transaction.get('Категория') == category and transaction.get('Статус') == 'OK'
                 and transaction.get('Сумма операции') < 0):
@@ -63,12 +75,13 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
                 if (int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 10
                         and int(date_transaction.day) >= int(date_1.day)):
                     result_list.append(transaction)
+    logger.info("Программа завершает работу и выдает результат")
 
     return result_list
 
-# if __name__ == '__main__':
-#     CURRENT_DIR = os.path.dirname(__file__)
-#     DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data')
-#     FILE_DIR = os.path.join(DATA_DIR, 'operations.xlsx')
-#     a = pd.read_excel(FILE_DIR)
-#     print(spending_by_category(a, 'Супермаркеты', '12.02.2021'))
+if __name__ == '__main__':
+    CURRENT_DIR = os.path.dirname(__file__)
+    DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data')
+    FILE_DIR = os.path.join(DATA_DIR, 'operations.xlsx')
+    a = pd.read_excel(FILE_DIR)
+    print(spending_by_category(a, 'Супермаркеты', '2021-02-12'))

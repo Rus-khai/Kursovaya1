@@ -1,15 +1,15 @@
 import json
 import logging
 import os
+# import pandas as pd
 
 from dotenv import load_dotenv
-
-from src.config import CURRENT_DIR, LOGS_DIR
-from utils import card_filtering, cards, currency_rate, read_transaction, stock_prices, top_5_transaction
-from views import time_of_the_day
+from config import DATA_DIR, LOGS_DIR, CURRENT_DIR
+from src.utils import card_filtering, cards, currency_rate, read_transaction, stock_prices, top_5_transaction
+from src.views import time_of_the_day
 
 log_file = os.path.join(LOGS_DIR, 'main.log')
-DATA_DIR = os.path.join(CURRENT_DIR,'data')
+DATA_DIR = os.path.join(CURRENT_DIR, 'data')
 
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)
@@ -37,7 +37,6 @@ def main_page():
     try:
         logger.info("Получение фрейма данных из файла Excel с данными транзакции")
         load_dotenv('.env')
-
         file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
         user_settings = os.path.join(DATA_DIR, 'user_settings.json')
     except Exception as e:

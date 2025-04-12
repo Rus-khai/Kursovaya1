@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.config import DATA_DIR
+from config import DATA_DIR
 
 
 def simple_search():

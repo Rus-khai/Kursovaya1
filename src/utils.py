@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from src.config import DATA_DIR
+from config import DATA_DIR
 
 file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
 user_settings = os.path.join(DATA_DIR, 'user_settings.json')
@@ -18,13 +18,12 @@ def read_transaction(date_input, file_path=file_path_excel) -> list[dict]:
     result_transaction = reader_data_excel.to_dict(orient='records')
 
     result_dict = []
-    out_date = date_input
     for data_dict in result_transaction:
         # Дата из словаря
         date = data_dict.get('Дата операции')
-        date_transaction = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()
+        date_transaction = datetime.datetime.strptime(date, "%d.%m.%Y %H:%M:%S").date()
         # Дата введенная пользователем
-        date_object = datetime.datetime.strptime(out_date, "%Y-%m-%d %H:%M:%S").date()
+        date_object = datetime.datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S").date()
         if (date_object.year == date_transaction.year
                 and date_object.month == date_transaction.month
                 and date_object.day >= date_transaction.day):
@@ -32,7 +31,7 @@ def read_transaction(date_input, file_path=file_path_excel) -> list[dict]:
                 result_dict.append(data_dict)
 
     return result_dict
-#print(read_transaction())
+
 
 def cards(filter_list_transaction):
     cards_list = []
