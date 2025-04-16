@@ -4,12 +4,12 @@ import os
 # import pandas as pd
 
 from dotenv import load_dotenv
-from config import DATA_DIR, LOGS_DIR, CURRENT_DIR
+from config import LOGS_DIR
 from src.utils import card_filtering, cards, currency_rate, read_transaction, stock_prices, top_5_transaction
 from src.views import time_of_the_day
 
 log_file = os.path.join(LOGS_DIR, 'main.log')
-DATA_DIR = os.path.join(CURRENT_DIR, 'data')
+#
 
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)
@@ -17,7 +17,6 @@ file_handler = logging.FileHandler(log_file, encoding='utf-8', mode='w')
 file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
-
 
 
 def main_page():
@@ -37,8 +36,8 @@ def main_page():
     try:
         logger.info("Получение фрейма данных из файла Excel с данными транзакции")
         load_dotenv('.env')
-        file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
-        user_settings = os.path.join(DATA_DIR, 'user_settings.json')
+        # file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
+        # user_settings = os.path.join(DATA_DIR, 'user_settings.json')
     except Exception as e:
         logger.error(f"Ошибка:{e}")
 
@@ -55,13 +54,13 @@ def main_page():
     logger.info('Мы получаем цену акции в соответствии с файлом user_settings')
     stock_price = stock_prices()
     result = {
-        "greeting":greeting,
-        "cards":cards_result,
-        "top_transactions":top_transactions,
-        "currency_rates":result_currency_rate,
-        "stock_prices":stock_price
+        "greeting": greeting,
+        "cards": cards_result,
+        "top_transactions": top_transactions,
+        "currency_rates": result_currency_rate,
+        "stock_prices": stock_price
     }
-
     return json.dumps(result, ensure_ascii=False, indent=4)
+
 
 print(main_page())

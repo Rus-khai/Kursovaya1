@@ -1,5 +1,4 @@
 import datetime
-# import json
 import logging
 import os.path
 from typing import Optional
@@ -79,9 +78,10 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
 
     return result_list
 
-if __name__ == '__main__':
-    CURRENT_DIR = os.path.dirname(__file__)
-    DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data')
-    FILE_DIR = os.path.join(DATA_DIR, 'operations.xlsx')
-    a = pd.read_excel(FILE_DIR)
-    print(spending_by_category(a, 'Супермаркеты', '2021-02-12'))
+
+# if __name__ == '__main__':
+#     CURRENT_DIR = os.path.dirname(__file__)
+#     DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data')
+#     FILE_DIR = os.path.join(DATA_DIR, 'operations.xlsx')
+#     a = pd.read_excel(FILE_DIR)
+#     print(spending_by_category(a, 'Супермаркеты', '2021-02-12'))
