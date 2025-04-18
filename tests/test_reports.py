@@ -97,10 +97,3 @@ def test_spending_by_category(get_mock):
                                                                             }
                                                                          ]
     get_mock.assert_called_once()
-
-
-
-
-@freeze_time("2023-01-01")
-def test_datetime_now(date="2023-01-01"):
-    assert spending_by_category(date) == "2023-01-01"

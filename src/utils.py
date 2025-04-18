@@ -44,6 +44,7 @@ def read_transaction(date_input, file_path=file_path_excel) -> list[dict]:
     logger.info("read_transaction:добавление транзакций и результирующий словарь")
     return result_dict
 
+# print(read_transaction('2021-12-31 16:44:00'))
 
 def cards(filter_list_transaction: list[dict]) -> list:
     """ Функция принимает отфильтрованный список транзакция, и возвращает список номеров карт"""
@@ -180,4 +181,4 @@ def stock_prices():
     return result_list
 
 
-#print(stock_prices())
+# print(stock_prices())
