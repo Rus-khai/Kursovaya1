@@ -23,6 +23,7 @@ def getting_the_current_time():
 def time_of_the_day():
     """Функция определяет время суток: утро, день, вечер или ночь"""
     logger.info("time_of_the_day:Начался процесс определения времени суток")
+
     if 4 <= getting_the_current_time().hour <= 11:
         return 'Доброе утро'
     elif 12 <= getting_the_current_time().hour <= 16:
@@ -31,5 +32,3 @@ def time_of_the_day():
         return 'Добрый вечер'
     elif 0 <= getting_the_current_time().hour <= 3:
         return 'Доброй ночи'
-
-

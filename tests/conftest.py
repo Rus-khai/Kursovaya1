@@ -1,7 +1,5 @@
-# import pandas as pd
-import pandas as pd
+import pandas
 import pytest
-
 
 
 def get_data():
@@ -182,8 +180,14 @@ def get_data():
 
 @pytest.fixture
 def df_transactions():
-    return pd.DataFrame(get_data())
+    return pandas.DataFrame(get_data())
+
 
 @pytest.fixture
 def json_transactions():
+    return get_data()
+
+
+@pytest.fixture
+def get_data_1():
     return get_data()

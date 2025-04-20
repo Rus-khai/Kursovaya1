@@ -7,7 +7,6 @@ def test_time_of_the_day():
         assert time_of_the_day() == 'Доброе утро'
 
 
-
 def test_time_of_day_try_evening():
     with freezegun.freeze_time("2025-02-25 18:35:50.032596"):
         assert time_of_the_day() == 'Добрый вечер'

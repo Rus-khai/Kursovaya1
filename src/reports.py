@@ -1,8 +1,9 @@
 import datetime
 import logging
 import os.path
+from functools import wraps
 from typing import Optional
-from config import LOGS_DIR
+from config import LOGS_DIR, PATH_REPORT
 import pandas as pd
 
 log_file = os.path.join(LOGS_DIR, 'reports.log')
@@ -15,10 +16,24 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
+def report_to_file(file_name: str = "default_report.xlsx"):
+    """ Декоратор позволяющий записывать отчеты в файл формата *xlsx.
+    Файл по умолчанию - default_report.xlsx
+    Все отчеты сохраняются в директории reports/"""
+    def inner(func):
+        @wraps
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            patch_to_report = os.path.join(PATH_REPORT, file_name)
+            result.to_excel(patch_to_report, index=False)
+            logger.info(f"Отчет записан в файл: {patch_to_report}")
+            return result
+        return wrapper
+    return inner
+
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> list[dict]:
     """Функция принимает DataFrame, название категории и опционально дату в формате YYYY-MM-DD.
     Возвращает список словарей с транзакциями по заданной категории за последние три месяца (от переданной даты)"""
-
     logger.info("Идёт проверка, введена ли дата, если нет, то будет назначена текущая дата.")
     if not date:
         date = datetime.datetime.now()
