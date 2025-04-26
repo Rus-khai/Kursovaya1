@@ -3,8 +3,10 @@ import logging
 import os.path
 from functools import wraps
 from typing import Optional
-from config import LOGS_DIR, PATH_REPORT
+
 import pandas as pd
+
+from config import LOGS_DIR, PATH_REPORT
 
 log_file = os.path.join(LOGS_DIR, 'reports.log')
 

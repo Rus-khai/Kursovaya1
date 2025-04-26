@@ -1,7 +1,7 @@
 from unittest import mock
 from unittest.mock import patch
-from src.utils import currency_rate
-from src.utils import read_transaction, cards, top_5_transaction, stock_prices
+
+from src.utils import cards, currency_rate, read_transaction, stock_prices, top_5_transaction
 
 
 @mock.patch('pandas.DataFrame.to_dict')

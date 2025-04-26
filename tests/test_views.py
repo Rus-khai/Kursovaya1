@@ -1,4 +1,5 @@
 import freezegun
+
 from src.views import time_of_the_day
 
 

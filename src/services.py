@@ -1,8 +1,10 @@
 import json
-import os
-import pandas as pd
 import logging
+import os
+
+import pandas as pd
 from dotenv import load_dotenv
+
 from config import DATA_DIR, LOGS_DIR
 
 

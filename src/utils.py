@@ -1,14 +1,15 @@
 import datetime
 import json
-import os
 import logging
+import os
+
 import pandas as pd
 import requests
-from config import LOGS_DIR
 from dotenv import load_dotenv
+from pandas.core.interchange.dataframe_protocol import DataFrame
 
+from config import DATA_DIR, LOGS_DIR
 
-from config import DATA_DIR
 log_file = os.path.join(LOGS_DIR, 'utils.log')
 file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
 user_settings = os.path.join(DATA_DIR, 'user_settings.json')
@@ -22,46 +23,84 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-def read_transaction(date_input, file_path=file_path_excel) -> list[dict]:
-    """Функция считывает excel.file и выводит список словарей с транзакциями, отфильтрованный по дате"""
-    logger.info("read_transaction:Получение фрейма данных из файла Excel с данными транзакции")
-    reader_data_excel = pd.read_excel(file_path)
-    result_transaction = reader_data_excel.to_dict(orient='records')
-    logger.info("read_transaction:Создаётся список транзакций, которые прошли через фильтрацию")
-    result_dict = []
-    logger.info("read_transaction:Идёт фильтрация")
-    for data_dict in result_transaction:
-        # Дата из словаря
-        date = data_dict.get('Дата операции')
-        date_transaction = datetime.datetime.strptime(date, "%d.%m.%Y %H:%M:%S").date()
-        # Дата введенная пользователем
-        date_object = datetime.datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S").date()
-        if (date_object.year == date_transaction.year
-                and date_object.month == date_transaction.month
-                and date_object.day >= date_transaction.day):
-            if data_dict.get('Статус') == 'OK':
-                result_dict.append(data_dict)
-    logger.info("read_transaction:добавление транзакций и результирующий словарь")
-    return result_dict
-
-# print(read_transaction('2021-12-31 16:44:00'))
+def getting_the_current_time():
+    """ Функция подучает текущий час времени """
+    logger.info("getting_the_current_time:Получение текущего времени")
+    current_date_time = datetime.datetime.now()
+    return current_date_time
 
 
-def cards(filter_list_transaction: list[dict]) -> list:
-    """ Функция принимает отфильтрованный список транзакция, и возвращает список номеров карт"""
-    logger.info("cards:Создаётся список номера карт")
-    cards_list = []
-    for transaction in filter_list_transaction:
-        if str(transaction.get('Номер карты')) != 'nan':
-            if transaction.get('Номер карты') not in cards_list:
-                cards_list.append(transaction.get('Номер карты'))
+def time_of_the_day():
+    """Функция определяет время суток: утро, день, вечер или ночь"""
+    logger.info("time_of_the_day:Начался процесс определения времени суток")
+    if 4 <= getting_the_current_time().hour <= 11:
+        return 'Доброе утро'
+    elif 12 <= getting_the_current_time().hour <= 16:
+        return 'Добрый день'
+    elif 17 <= getting_the_current_time().hour <= 23:
+        return 'Добрый вечер'
+    elif 0 <= getting_the_current_time().hour <= 3:
+        return 'Доброй ночи'
+
+def get_date_time(date_input:str, date_format: str="%Y-%m-%d %H:%M:%S") -> list[str]:
+    dt = datetime.datetime.strptime(date_input, date_format)
+    start_of_month = dt.replace(day=1)
+    result = [start_of_month.strftime("%d.%m.%Y %H:%M:%S"), dt.strftime("%d.%m.%Y %H:%M:%S")]
+    return result
+
+
+def get_filtered_by_date_range(data, period_time) -> DataFrame:
+    df = pd.read_excel(file_path_excel)
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+    start_date = datetime.datetime.strptime(period_time[0], "%d.%m.%Y %H:%M:%S")
+    finish_date = datetime.datetime.strptime(period_time[1], "%d.%m.%Y %H:%M:%S")
+
+    filter_df = df[(df["Дата операции"] >= start_date) &
+                   (df["Дата операции"] <= finish_date)
+    ]
+    return  filter_df
+
+
+def filter_by_cards(filter_df: DataFrame) -> list:
+    card_list = []
+
+    card_sorted = filter_df[["Номер карты"]]
+
+    for index, row in card_sorted.iterrows():
+        if str(row.get('Номер карты')) != 'nan':
+            if row.get('Номер карты') not in card_list:
+                card_list.append(row.get('Номер карты'))
         else:
             continue
-    logger.info("cards:добавление номеров карт в список")
-    return cards_list
+    return card_list
 
 
-def card_filtering(filter_list_transaction: list[dict], list_cards: list[dict]) -> list[dict]:
+def get_cards(filter_df: DataFrame) -> list[dict]:
+    """
+
+    """
+    count = 0
+    cashback = 0
+    result_list = []
+    card_sorted = filter_df[
+        [
+            "Номер карты",
+            "Сумма операции",
+            "Кэшбэк"
+        ]
+    ]
+    for index, row in card_sorted.iterrows():
+        last_digits = str(row["Номер карты"]).replace("*", "")
+        total_spent = row["Сумма операции"]
+        cashback = row["Кэшбэк"]
+
+
+
+
+    return result_list
+
+
+def card_filtering(filter_df: DataFrame, cards: list) -> list[dict]:
     """ Функция принимает DataFrame и список карт, которые есть у пользователя.
         Возвращает список словарей с данными по каждой карте
         - последние 4 цифры номера карты
@@ -69,17 +108,25 @@ def card_filtering(filter_list_transaction: list[dict], list_cards: list[dict]) 
         - кешбэк по данной карте. """
     logger.info("card_filtering:Создаётся список номера карт")
     result_dict_list = []
-    for card in list_cards:
+    card_sorted = filter_df[
+        [
+            "Номер карты",
+            "Сумма операции",
+            "Кэшбэк"
+        ]
+    ]
+    for card in cards:
         count = 0
         cashback = 0
-        for transaction in filter_list_transaction:
-            if transaction.get('Номер карты') == card:
-                if float(transaction.get('Сумма операции')) <= 0:
-                    count += transaction.get('Сумма операции')
-                if transaction.get('Кэшбэк'):
-                    cashback_data = str(transaction.get('Кэшбэк'))
+
+        for index, row in card_sorted.iterrows():
+            if row.get('Номер карты') == card:
+                if float(row.get('Сумма операции')) <= 0:
+                    count += row.get('Сумма операции')
+                if row.get('Кэшбэк'):
+                    cashback_data = str(row.get('Кэшбэк'))
                     if cashback_data != 'nan':
-                        cashback += int(transaction.get('Кэшбэк'))
+                        cashback += int(row.get('Кэшбэк'))
 
         dict_filter_card = {"last_digits": str(card)[1:],
                             "total_spent": round(count, 2),
@@ -88,7 +135,6 @@ def card_filtering(filter_list_transaction: list[dict], list_cards: list[dict]) 
         result_dict_list.append(dict_filter_card)
     logger.info("card_filtering:добавление транзакций и результирующий список")
     return result_dict_list
-# print(filter(read_transaction_excel(file_path_excel), cards(read_transaction_excel())))
 
 
 def top_5_transaction(filter_list_transaction: list[dict], direction=True) -> list[dict]:
