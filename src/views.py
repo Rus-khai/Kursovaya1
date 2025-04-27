@@ -1,11 +1,14 @@
-import datetime
+
+import json
 import logging
 import os
-import json
+
 import pandas as pd
-from src.utils import time_of_the_day, get_date_time, get_filtered_by_date_range, get_cards, filter_by_cards, card_filtering
 from dotenv import load_dotenv
-from config import LOGS_DIR, DATA_DIR
+
+from config import DATA_DIR, LOGS_DIR
+from src.utils import (card_filtering, currency_rate, filter_by_cards, get_date_time, get_filtered_by_date_range,
+                       stock_prices, time_of_the_day, top_5_transaction)
 
 log_file = os.path.join(LOGS_DIR, 'views.log')
 logger = logging.getLogger('views')
@@ -19,9 +22,10 @@ try:
     logger.info("Получение фрейма данных из файла Excel с данными транзакции")
     load_dotenv('.env')
     file_path = os.path.join(DATA_DIR, 'operations.xlsx')
-    # user_settings = os.path.join(DATA_DIR, 'user_settings.json')
+    user_settings = os.path.join(DATA_DIR, 'user_settings.json')
 except Exception as e:
     logger.error(f"Ошибка:{e}")
+
 
 def main_page(date_input):
     """ Функция для страницы 'Главная'.
@@ -38,39 +42,30 @@ def main_page(date_input):
         4. Курс валют, согласно файла user_settings.
         5. Стоимость акций, согласно файла user_settings."""
 
-
-
     logger.info('Установка времени суток для приветствия')
     logger.info('Получения приветствия в зависимости от времени дня')
 
+    with open(user_settings, 'r', encoding="utf-8") as file:
+        read_data = json.load(file)
+
+    logger.info('Идет считывание excel.file')
     data = pd.read_excel(file_path)
     greeting = time_of_the_day()
     time_period = get_date_time(date_input)
     filtered_by_date_range = get_filtered_by_date_range(date_input, time_period)
     cards_filter = filter_by_cards(filtered_by_date_range)
     cards = card_filtering(filtered_by_date_range, cards_filter)
-
-
-
-
-
-
-
-    # logger.info('Идет считывание excel.file и выводит список словарей с транзакциями, отфильтрованный по дате')
-    # cards_result = card_filtering(read_transaction(date_input), cards(read_transaction(date_input)))
-    # logger.info('Фильтрация Топ-5 транзакций по сумме платежа')
-    # top_transactions = top_5_transaction(read_transaction(date_input))
-    # logger.info('Мы получаем обменные курсы в соответствии с файлом user_settings')
-    # result_currency_rate = currency_rate()
-    # logger.info('Мы получаем цену акции в соответствии с файлом user_settings')
-    # stock_price = stock_prices()
+    logger.info('Фильтрация Топ-5 транзакций по сумме платежа')
+    top_transactions = top_5_transaction(data)
+    logger.info('Мы получаем обменные курсы в соответствии с файлом user_settings')
+    result_currency_rate = currency_rate(read_data)
+    logger.info('Мы получаем цену акции в соответствии с файлом user_settings')
+    stock_price = stock_prices(read_data)
     result = {
         "greeting": greeting,
         "cards": cards,
+        "top_transactions": top_transactions,
+        "currency_rates": result_currency_rate,
+        "stock_prices": stock_price
     }
     return json.dumps(result, ensure_ascii=False, indent=4)
-
-        # "cards": cards_result,
-        # "top_transactions": top_transactions,
-        # "currency_rates": result_currency_rate,
-        # "stock_prices": stock_price

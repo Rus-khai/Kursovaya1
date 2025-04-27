@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Optional
 
 import pandas as pd
+from pandas.core.interchange.dataframe_protocol import DataFrame
 
 from config import LOGS_DIR, PATH_REPORT
 
@@ -33,72 +34,19 @@ def report_to_file(file_name: str = "default_report.xlsx"):
         return wrapper
     return inner
 
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> list[dict]:
+
+def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> DataFrame:
     """Функция принимает DataFrame, название категории и опционально дату в формате YYYY-MM-DD.
     Возвращает список словарей с транзакциями по заданной категории за последние три месяца (от переданной даты)"""
     logger.info("Идёт проверка, введена ли дата, если нет, то будет назначена текущая дата.")
     if not date:
         date = datetime.datetime.now()
+    else:
+        end_date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        start_date = end_date - pd.DateOffset(months=3)
 
-    transactions_dicts = transactions.to_dict(orient='records')
-
-    logger.info("Создаётся список расходов за последние три месяца (с даты отправки)")
-    result_list = []
-    for transaction in transactions_dicts:
-        transaction_date = transaction.get('Дата операции')
-
-        date_transaction = datetime.datetime.strptime(transaction_date, "%d.%m.%Y %H:%M:%S").date()
-        date_1 = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-
-        if (transaction.get('Категория') == category and transaction.get('Статус') == 'OK'
-                and transaction.get('Сумма операции') < 0):
-
-            if date_1.month > 2:
-                if (int(date_transaction.year) == int(date_1.year) and int(date_transaction.month) == date_1.month
-                        and int(date_transaction.day) <= int(date_1.day)):
-                    result_list.append(transaction)
-                if int(date_transaction.year) == int(date_1.year) and int(date_transaction.month) == date_1.month - 1:
-                    result_list.append(transaction)
-                if (int(date_transaction.year) == int(date_1.year) - 1
-                        and int(date_transaction.month) == date_1.month - 2):
-                    result_list.append(transaction)
-                if (int(date_transaction.year) == int(date_1.year) - 1
-                        and int(date_transaction.month) == date_1.month - 3
-                        and int(date_transaction.day) >= int(date_1.day)):
-                    result_list.append(transaction)
-
-            if date_1.month == 2:
-                if (int(date_transaction.year) == int(date_1.year) and int(date_transaction.month) == date_1.month
-                        and int(date_transaction.day) <= int(date_1.day)):
-                    result_list.append(transaction)
-                if int(date_transaction.year) == int(date_1.year) and int(date_transaction.month) == date_1.month - 1:
-                    result_list.append(transaction)
-                if int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 12:
-                    result_list.append(transaction)
-                if (int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 11
-                        and int(date_transaction.day) >= int(date_1.day)):
-                    result_list.append(transaction)
-
-            if date_1.month == 1:
-                if (int(date_transaction.year) == int(date_1.year) and int(date_transaction.month) == date_1.month
-                        and int(date_transaction.day) <= int(date_1.day)):
-                    result_list.append(transaction)
-                if int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 12:
-                    result_list.append(transaction)
-                if (int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 11
-                        and int(date_transaction.day) >= int(date_1.day)):
-                    result_list.append(transaction)
-                if (int(date_transaction.year) == int(date_1.year) - 1 and int(date_transaction.month) == 10
-                        and int(date_transaction.day) >= int(date_1.day)):
-                    result_list.append(transaction)
-    logger.info("Программа завершает работу и выдает результат")
-
-    return result_list
-
-
-# if __name__ == '__main__':
-#     CURRENT_DIR = os.path.dirname(__file__)
-#     DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data')
-#     FILE_DIR = os.path.join(DATA_DIR, 'operations.xlsx')
-#     a = pd.read_excel(FILE_DIR)
-#     print(spending_by_category(a, 'Супермаркеты', '2021-02-12'))
+        transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], format='%d.%m.%Y %H:%M:%S')
+        filtered_df_to_date = transactions[(transactions['Дата операции'] >= start_date)
+                                           & (transactions['Дата операции'] <= end_date)]
+        filter_df_to_category = filtered_df_to_date[filtered_df_to_date["Категория"] == category]
+        return filter_df_to_category

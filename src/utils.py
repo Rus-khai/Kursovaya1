@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import os
 
@@ -12,7 +11,7 @@ from config import DATA_DIR, LOGS_DIR
 
 log_file = os.path.join(LOGS_DIR, 'utils.log')
 file_path_excel = os.path.join(DATA_DIR, 'operations.xlsx')
-user_settings = os.path.join(DATA_DIR, 'user_settings.json')
+
 load_dotenv('.env')
 
 logger = logging.getLogger('utils')
@@ -42,26 +41,31 @@ def time_of_the_day():
     elif 0 <= getting_the_current_time().hour <= 3:
         return 'Доброй ночи'
 
-def get_date_time(date_input:str, date_format: str="%Y-%m-%d %H:%M:%S") -> list[str]:
+
+def get_date_time(date_input: str, date_format: str = "%Y-%m-%d %H:%M:%S") -> list[str]:
+    """ Функция получает дату, и возвращает список от начала месяца до даты полученная пользователем"""
+    logger.info("get_date_time:Перевод DataFrame в формат datetime")
     dt = datetime.datetime.strptime(date_input, date_format)
     start_of_month = dt.replace(day=1)
     result = [start_of_month.strftime("%d.%m.%Y %H:%M:%S"), dt.strftime("%d.%m.%Y %H:%M:%S")]
+    logger.info("get_date_time:Вывод список дат")
     return result
 
 
-def get_filtered_by_date_range(data, period_time) -> DataFrame:
-    df = pd.read_excel(file_path_excel)
+def get_filtered_by_date_range(data: str, period_time: list) -> DataFrame:
+    """ Функция принимает DataFrame и период времени,
+    и возвращает отфильтрованный DataFrame транзакций в этом интервале времени """
+    df = pd.read_excel(data)
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
     start_date = datetime.datetime.strptime(period_time[0], "%d.%m.%Y %H:%M:%S")
     finish_date = datetime.datetime.strptime(period_time[1], "%d.%m.%Y %H:%M:%S")
 
-    filter_df = df[(df["Дата операции"] >= start_date) &
-                   (df["Дата операции"] <= finish_date)
-    ]
-    return  filter_df
+    filter_df = df[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= finish_date)]
+    return filter_df
 
 
 def filter_by_cards(filter_df: DataFrame) -> list:
+    """ Функция принимает отфильтрованный DataFrame по датам, и возвращает список карт"""
     card_list = []
 
     card_sorted = filter_df[["Номер карты"]]
@@ -73,31 +77,6 @@ def filter_by_cards(filter_df: DataFrame) -> list:
         else:
             continue
     return card_list
-
-
-def get_cards(filter_df: DataFrame) -> list[dict]:
-    """
-
-    """
-    count = 0
-    cashback = 0
-    result_list = []
-    card_sorted = filter_df[
-        [
-            "Номер карты",
-            "Сумма операции",
-            "Кэшбэк"
-        ]
-    ]
-    for index, row in card_sorted.iterrows():
-        last_digits = str(row["Номер карты"]).replace("*", "")
-        total_spent = row["Сумма операции"]
-        cashback = row["Кэшбэк"]
-
-
-
-
-    return result_list
 
 
 def card_filtering(filter_df: DataFrame, cards: list) -> list[dict]:
@@ -137,7 +116,7 @@ def card_filtering(filter_df: DataFrame, cards: list) -> list[dict]:
     return result_dict_list
 
 
-def top_5_transaction(filter_list_transaction: list[dict], direction=True) -> list[dict]:
+def top_5_transaction(df: DataFrame, direction=True) -> list[dict]:
     """ Функция принимает DataFrame с транзакциями, фильтрует его по сумме операции.
         Возвращает список словарей с пятью наибольшими тратами, содержащими данные:
         -дату операции,
@@ -146,8 +125,9 @@ def top_5_transaction(filter_list_transaction: list[dict], direction=True) -> li
         -описание операции. """
     logger.info("top_5_transaction:Создаётся список")
     result_dict_transaction = []
+    transaction = df.to_dict(orient='records')
     logger.info("top_5_transaction:Идёт сортировка от наибольших трат к наименьшему")
-    result_sorted = sorted(filter_list_transaction, key=lambda k: k.get("Сумма операции"), reverse=direction)
+    result_sorted = sorted(transaction, key=lambda k: k.get("Сумма операции"), reverse=direction)
 
     for transaction in result_sorted[:5]:
 
@@ -163,25 +143,21 @@ def top_5_transaction(filter_list_transaction: list[dict], direction=True) -> li
     return result_dict_transaction
 
 
-def currency_rate():
+def currency_rate(data_json):
     """ Функция возвращает список со словарями курса валют имеющихся в файле 'user_settings'
         Для курса валюты используется Exchange Rates Data API: https://apilayer.com/exchangerates_data-api."""
     logger.info("currency_rate:открытие и чтение файла")
-    with open(user_settings, 'r', encoding="utf-8") as file:
-        read_data = json.load(file)
 
     load_dotenv()
     api_key = os.getenv('API_KEY')
-    date_obj = datetime.datetime.now()
-    date_now = date_obj.strftime("%Y-%m-%d")
 
     logger.info("currency_rate:Создание результирующего списка")
     result_list = []
     logger.info("currency_rate:Идёт процесс получение данных о курсе рубля")
-    if read_data.get('user_currencies'):
-        for currency in read_data.get('user_currencies'):
+    if data_json.get('user_currencies'):
+        for currency in data_json.get('user_currencies'):
             url = (f'https://api.apilayer.com/exchangerates_data/convert?'
-                   f'to=RUB&from={currency}&amount=1&date={date_now}')
+                   f'to=RUB&from={currency}&amount=1')
             headers = {"apikey": api_key}
 
             response = requests.get(url, headers=headers)
@@ -194,23 +170,19 @@ def currency_rate():
     logger.info("currency_rate:Добавление полученных данных в результирующий словарь")
     return result_list
 
-# print(currency_rate())
 
-
-def stock_prices():
+def stock_prices(data_json):
     """Функция возвращает список со словарями цен на акции имеющихся в файле 'user_settings'
         Для получения цен используется Share Price Data API: https://api.marketstack.com."""
     logger.info("stock_prices:открытие и чтение файла")
-    with open(user_settings, 'r', encoding="utf-8") as file:
-        read_data = json.load(file)
 
     load_dotenv()
     api_key = os.getenv('API_KEY_MARKSTACK')
     logger.info("stock_prices:Создание результирующего списка")
     result_list = []
     logger.info("stock_prices:Идёт процесс получение цен")
-    if read_data.get('user_stocks'):
-        for data in read_data.get('user_stocks'):
+    if data_json.get('user_stocks'):
+        for data in data_json.get('user_stocks'):
             querystring = {"symbols": {data}}
             responses = requests.get(f"https://api.marketstack.com/v1/eod?access_key={api_key}", params=querystring)
             data_dicts = responses.json().get('data')

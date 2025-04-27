@@ -1,7 +1,10 @@
 import pandas
 import pytest
 
+from src.views import file_path
 
+
+# @pytest.fixture
 def get_data():
     transactions = [
         {
@@ -179,15 +182,22 @@ def get_data():
 
 
 @pytest.fixture
-def df_transactions():
-    return pandas.DataFrame(get_data())
-
-
-@pytest.fixture
 def json_transactions():
     return get_data()
 
+@pytest.fixture
+def df_transaction():
+    return pandas.DataFrame(get_data())
 
 @pytest.fixture
 def get_data_1():
     return get_data()
+
+
+@pytest.fixture
+def get_period_time():
+    result = ["01.01.2018 15:28:22", "06.01.2018 15:28:22"]
+    return result
+
+if __name__ == "__main__":
+    print(get_data)

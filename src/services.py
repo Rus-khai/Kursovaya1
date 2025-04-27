@@ -2,13 +2,12 @@ import json
 import logging
 import os
 
-import pandas as pd
 from dotenv import load_dotenv
 
-from config import DATA_DIR, LOGS_DIR
+from config import LOGS_DIR
 
 
-def simple_search(str_search):
+def simple_search(str_search, transactions):
     """ Функция принимает список словарей с данными о банковских операциях и строку поиска,
     а возвращает список словарей, у которых в описании есть данная строка. """
 
@@ -22,28 +21,18 @@ def simple_search(str_search):
     logger.addHandler(file_handler)
 
     load_dotenv('.env')
-    file_path = os.path.join(DATA_DIR, 'operations.xlsx')
-    logger.info("Получение строки для поиска")
-
-    logger.info("Открытие файла")
-    reader_data_excel = pd.read_excel(file_path)
-    result_transaction = reader_data_excel.to_dict(orient='records')
     logger.info("Создание результирующего списка")
     result_list_transaction = []
     logger.info("Идёт поиск по введенным данным")
     try:
-        for transaction in result_transaction:
-            if (str(transaction.get('Описание')).lower() == str_search.lower()
-                    or str(transaction.get('Категория')).lower() == str_search.lower()):
+        for transaction in transactions:
+            if str_search.lower() in (str(transaction.get('Описание')).lower()
+                                      or str_search.lower() in str(transaction.get('Категория')).lower()):
                 result_list_transaction.append(transaction)
     except Exception as e:
         result_list_transaction = f'Ошибка {e}'
     finally:
         if result_list_transaction:
-            # print(result_list_transaction)
             final = json.dumps(result_list_transaction, ensure_ascii=False, indent=4)
             return final
         return 'Операции не найдены'
-
-
-# print(simple_search())
