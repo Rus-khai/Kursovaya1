@@ -1,13 +1,10 @@
-from unittest.mock import patch
-
 import pandas as pd
 
 from src.reports import spending_by_category
 
 
-@patch('pandas.DataFrame.to_dict')
-def test_spending_by_category(get_mock):
-    get_mock.return_value = [
+def test_spending_by_category():
+    data = [
         {
             "Дата операции": "03.01.2018 15:55:21",
             "Дата платежа": "03.01.2018",
@@ -77,7 +74,7 @@ def test_spending_by_category(get_mock):
             "Сумма операции с округлением": 3000.0
         }
     ]
-    assert spending_by_category(pd.DataFrame, "Здоровье", '2018-02-15') == [
+    result_2 = [
         {
             "Дата операции": "03.01.2018 15:55:21",
             "Дата платежа": "03.01.2018",
@@ -94,5 +91,10 @@ def test_spending_by_category(get_mock):
             "Бонусы (включая кэшбэк)": 0,
             "Округление на инвесткопилку": 0,
             "Сумма операции с округлением": 21.0
-        }]
-    get_mock.assert_called_once()
+        }
+    ]
+    df_result_2 = pd.DataFrame(result_2)
+    df_result_2["Дата операции"] = pd.to_datetime(df_result_2["Дата операции"], format='%d.%m.%Y %H:%M:%S')
+    final_df_result_2 = df_result_2.to_dict()
+    result = spending_by_category(pd.DataFrame(data), "Здоровье", '2018-02-15').reset_index(drop=True).to_dict()
+    assert result == final_df_result_2

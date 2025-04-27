@@ -1,6 +1,6 @@
 import json
 import os
-from unittest import mock
+
 
 from config import DATA_DIR
 from src.services import simple_search
@@ -8,9 +8,7 @@ from src.services import simple_search
 file_path = os.path.join(DATA_DIR, 'operations_test.xlsx')
 
 
-@mock.patch('pandas.DataFrame.to_dict')
-def test_simple_search(mock_get, json_transactions):
-    mock_get.return_value = json_transactions
+def test_simple_search(json_transactions):
     result = [
         {
             "Дата операции": "05.01.2018 14:58:38",
@@ -31,4 +29,4 @@ def test_simple_search(mock_get, json_transactions):
         }
     ]
 
-    assert simple_search('Цветы') == json.dumps(result, ensure_ascii=False, indent=4)
+    assert simple_search('Цветы', json_transactions) == json.dumps(result, ensure_ascii=False, indent=4)

@@ -26,8 +26,8 @@ def simple_search(str_search, transactions):
     logger.info("Идёт поиск по введенным данным")
     try:
         for transaction in transactions:
-            if str_search.lower() in (str(transaction.get('Описание')).lower()
-                                      or str_search.lower() in str(transaction.get('Категория')).lower()):
+            if (str_search.lower() in str(transaction.get('Описание', '')).lower()
+                    or str_search.lower() in str(transaction.get('Категория', '')).lower()):
                 result_list_transaction.append(transaction)
     except Exception as e:
         result_list_transaction = f'Ошибка {e}'

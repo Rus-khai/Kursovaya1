@@ -52,10 +52,10 @@ def get_date_time(date_input: str, date_format: str = "%Y-%m-%d %H:%M:%S") -> li
     return result
 
 
-def get_filtered_by_date_range(data: str, period_time: list) -> DataFrame:
+def get_filtered_by_date_range(df, period_time: list) -> DataFrame:
     """ Функция принимает DataFrame и период времени,
     и возвращает отфильтрованный DataFrame транзакций в этом интервале времени """
-    df = pd.read_excel(data)
+
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
     start_date = datetime.datetime.strptime(period_time[0], "%d.%m.%Y %H:%M:%S")
     finish_date = datetime.datetime.strptime(period_time[1], "%d.%m.%Y %H:%M:%S")
@@ -132,7 +132,7 @@ def top_5_transaction(df: DataFrame, direction=True) -> list[dict]:
     for transaction in result_sorted[:5]:
 
         dict_transaction = {
-            "date": transaction.get('Дата операции'),
+            "date": str(transaction.get('Дата операции')),
             "amount": transaction.get('Сумма операции'),
             "category": transaction.get('Категория'),
             "description": transaction.get('Описание')

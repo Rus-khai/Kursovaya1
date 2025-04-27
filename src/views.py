@@ -52,7 +52,7 @@ def main_page(date_input):
     data = pd.read_excel(file_path)
     greeting = time_of_the_day()
     time_period = get_date_time(date_input)
-    filtered_by_date_range = get_filtered_by_date_range(date_input, time_period)
+    filtered_by_date_range = get_filtered_by_date_range(data, time_period)
     cards_filter = filter_by_cards(filtered_by_date_range)
     cards = card_filtering(filtered_by_date_range, cards_filter)
     logger.info('Фильтрация Топ-5 транзакций по сумме платежа')
